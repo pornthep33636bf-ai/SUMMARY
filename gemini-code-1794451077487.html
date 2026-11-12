@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สรุปงานส่งตรง - Executive Sales Report</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Prompt & Plus Jakarta Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- html2canvas สำหรับแคปภาพส่งไลน์ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #eef2f6;
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+      background-size: 24px 24px;
+      min-height: 100vh;
+    }
+    .font-num {
+      font-family: 'Plus Jakarta Sans', 'Prompt', sans-serif;
+    }
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="py-8 px-4 sm:px-6 flex flex-col items-center">
+
+  <!-- แถบควบคุมด้านบน (ไม่ติดไปในรูปตอนแคป) -->
+  <div class="w-full max-w-4xl mb-5 bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap justify-between items-center gap-3">
+    <div class="flex flex-wrap items-center gap-2">
+      <button onclick="addRow()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm transition flex items-center gap-2 cursor-pointer">
+        <i class="fa-solid fa-plus text-amber-400"></i> เพิ่มรายชื่อ Sale
+      </button>
+      <button onclick="clearNumbers()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-sm font-medium transition cursor-pointer">
+        <i class="fa-solid fa-eraser mr-1 text-slate-500"></i> รีเซ็ตยอดเป็น 0
+      </button>
+      <button onclick="resetData()" class="text-slate-400 hover:text-slate-600 px-2.5 py-2 rounded-xl text-xs transition cursor-pointer" title="คืนค่าข้อมูลเริ่มต้น">
+        <i class="fa-solid fa-rotate-left"></i> คืนค่าเดิม
+      </button>
+    </div>
+
+    <button onclick="downloadAsImage()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-2 rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/20 transition flex items-center gap-2 cursor-pointer">
+      <i class="fa-solid fa-image"></i> บันทึกรูปภาพส่งไลน์
+    </button>
+  </div>
+
+  <!-- การ์ดรายงานหลัก (ส่วนที่จะถูกแคปเป็นรูปภาพ) -->
+  <div id="report-capture-area" class="w-full max-w-4xl bg-white rounded-[28px] shadow-2xl shadow-slate-300/60 border border-slate-100 overflow-hidden">
+    
+    <!-- Top Header: ธีม Luxury Dark Slate & Gold -->
+    <div class="relative bg-slate-900 px-7 sm:px-10 py-8 text-white overflow-hidden">
+      <!-- ลวดลายตกแต่งพื้นหลัง -->
+      <div class="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none"></div>
+      <div class="absolute right-20 -bottom-20 w-56 h-56 rounded-full bg-amber-500/10 blur-2xl pointer-events-none"></div>
+
+      <div class="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-semibold tracking-wider uppercase mb-2.5">
+            <i class="fa-solid fa-crown text-[10px]"></i> DIRECT SALES REPORT
+          </div>
+          <!-- หัวข้อแก้ไขได้ -->
+          <input type="text" id="report-title" value="สรุปงานส่งตรง" oninput="saveState()"
+            class="block bg-transparent text-3xl sm:text-4xl font-bold tracking-tight text-white focus:outline-none focus:bg-white/10 rounded-lg px-1.5 -ml-1.5 w-full sm:w-96 transition">
+        </div>
+
+        <!-- กล่องวันที่ดีไซน์หรู (แก้ไขได้) -->
+        <div class="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-5 py-3 text-left sm:text-right self-stretch sm:self-auto flex sm:block justify-between items-center">
+          <span class="text-xs text-slate-300 font-medium flex items-center sm:justify-end gap-1.5">
+            <i class="fa-regular fa-calendar text-amber-400"></i> ประจำวันที่
+          </span>
+          <input type="text" id="report-date" value="11/11/2569" oninput="saveState()"
+            class="font-num bg-transparent text-right font-bold text-xl text-amber-300 focus:outline-none focus:bg-white/10 rounded px-1.5 w-32 sm:mt-0.5">
+        </div>
+      </div>
+
+      <!-- การ์ดสรุปยอดรวม 2 ช่อง (Glassmorphism Cards) -->
+      <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-7">
+        <!-- จำนวนบิลรวม -->
+        <div class="bg-white/[0.07] backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-slate-300 uppercase tracking-wider">จำนวนบิลรวมทั้งหมด</p>
+            <div class="flex items-baseline gap-2 mt-1.5">
+              <span id="top-total-bills" class="font-num text-4xl sm:text-5xl font-extrabold text-white tracking-tight">0</span>
+              <span class="text-sm text-emerald-400 font-medium">บิล</span>
+            </div>
+          </div>
+          <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center text-2xl">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+        </div>
+
+        <!-- ยอดรวมทั้งหมด -->
+        <div class="bg-gradient-to-br from-indigo-500/25 to-purple-500/20 backdrop-blur-md border border-indigo-400/30 rounded-2xl p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-medium text-indigo-200 uppercase tracking-wider">ยอดขายรวมทั้งหมด</p>
+            <div class="flex items-baseline gap-2 mt-1.5">
+              <span id="top-total-amount" class="font-num text-4xl sm:text-5xl font-extrabold text-amber-300 tracking-tight">0</span>
+              <span class="text-sm text-indigo-200 font-medium">บาท</span>
+            </div>
+          </div>
+          <div class="w-14 h-14 rounded-2xl bg-amber-400/20 border border-amber-400/30 text-amber-300 flex items-center justify-center text-2xl">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ตารางข้อมูลรายชื่อ Sale -->
+    <div class="p-4 sm:p-6">
+      <div class="overflow-x-auto rounded-2xl border border-slate-200/80">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <th class="py-4 px-5 text-left w-[38%]">รายชื่อ SALE</th>
+              <th class="py-4 px-4 text-center w-[22%]">จำนวนบิล</th>
+              <th class="py-4 px-6 text-right w-[32%]">ยอด / ยอดรวม (บาท)</th>
+              <th class="py-4 px-3 text-center w-[8%] action-col"></th>
+            </tr>
+          </thead>
+          <tbody id="sales-table-body" class="divide-y divide-slate-100 text-base">
+            <!-- แถวข้อมูลจะสร้างจาก JS -->
+          </tbody>
+          <tfoot>
+            <tr class="bg-slate-900 text-white font-bold">
+              <td class="py-4 px-5 text-left text-base sm:text-lg flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span> รวมทั้งหมด
+              </td>
+              <td id="footer-total-bills" class="font-num py-4 px-4 text-center text-emerald-400 text-xl">
+                0
+              </td>
+              <td id="footer-total-amount" class="font-num py-4 px-6 text-right text-amber-300 text-xl sm:text-2xl">
+                0
+              </td>
+              <td class="py-4 px-3 action-col"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Footer ใต้ตาราง -->
+      <div class="mt-4 px-2 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-400">
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>คลิกที่ชื่อ, จำนวนบิล หรือยอดเงิน เพื่อแก้ไขได้ทันที</span>
+        </div>
+        <div id="sale-count-badge" class="font-medium text-slate-500">
+          ทีมขายทั้งหมด 6 ท่าน
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ข้อมูลตั้งต้นตามรูปภาพของคุณ
+    const defaultData = {
+      title: 'สรุปงานส่งตรง',
+      date: '11/11/2569',
+      rows: [
+        { id: 1, name: 'เบ๊น', bills: 7, amount: 446680 },
+        { id: 2, name: 'กบ', bills: 3, amount: 32590 },
+        { id: 3, name: 'แมน', bills: 0, amount: 0 },
+        { id: 4, name: 'พลอย', bills: 16, amount: 241651 },
+        { id: 5, name: 'แต้', bills: 6, amount: 14935 },
+        { id: 6, name: 'วรเชษฐ์', bills: 4, amount: 139940 }
+      ]
+    };
+
+    let appState = JSON.parse(localStorage.getItem('exec_sales_report_v2')) || JSON.parse(JSON.stringify(defaultData));
+
+    function saveState() {
+      appState.title = document.getElementById('report-title').value;
+      appState.date = document.getElementById('report-date').value;
+      localStorage.setItem('exec_sales_report_v2', JSON.stringify(appState));
+    }
+
+    function formatNumber(num) {
+      return Number(num || 0).toLocaleString('en-US');
+    }
+
+    // สีอวาตาร์ตัวอักษรแรกของ Sale
+    const avatarColors = [
+      'bg-indigo-100 text-indigo-700 border-indigo-200',
+      'bg-emerald-100 text-emerald-700 border-emerald-200',
+      'bg-amber-100 text-amber-700 border-amber-200',
+      'bg-rose-100 text-rose-700 border-rose-200',
+      'bg-sky-100 text-sky-700 border-sky-200',
+      'bg-purple-100 text-purple-700 border-purple-200'
+    ];
+
+    function renderTable() {
+      document.getElementById('report-title').value = appState.title;
+      document.getElementById('report-date').value = appState.date;
+
+      const totalAmount = appState.rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+      const maxAmount = Math.max(...appState.rows.map(r => Number(r.amount) || 0));
+
+      const tbody = document.getElementById('sales-table-body');
+      tbody.innerHTML = '';
+
+      appState.rows.forEach((row, index) => {
+        const colorClass = avatarColors[index % avatarColors.length];
+        const firstChar = (row.name || '?').trim().charAt(0);
+        const percent = totalAmount > 0 ? ((Number(row.amount) / totalAmount) * 100).toFixed(1) : 0;
+        const isTop = maxAmount > 0 && Number(row.amount) === maxAmount;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition group';
+
+        tr.innerHTML = `
+          <!-- ชื่อ Sale + Progress Bar สัดส่วนยอดขาย -->
+          <td class="py-3.5 px-5">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl border ${colorClass} font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
+                ${firstChar}
+              </div>
+              <div class="w-full">
+                <div class="flex items-center gap-1.5">
+                  <input type="text" value="${row.name}" placeholder="ชื่อ Sale..."
+                    onchange="updateRow(${index}, 'name', this.value)"
+                    class="w-full font-semibold text-slate-800 bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-200 focus:border-indigo-500 rounded-lg px-2 py-1 -ml-2 outline-none transition">
+                  ${isTop ? '<span title="ยอดขายสูงสุด" class="text-amber-500 text-xs shrink-0"><i class="fa-solid fa-crown"></i></span>' : ''}
+                </div>
+                <!-- แถบแสดงเปอร์เซ็นต์ยอดขาย -->
+                <div class="flex items-center gap-2 mt-1">
+                  <div class="w-full max-w-[120px] bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div class="bg-indigo-500 h-1.5 rounded-full transition-all duration-300" style="width: ${percent}%"></div>
+                  </div>
+                  <span class="font-num text-[11px] font-medium text-slate-400">${percent}%</span>
+                </div>
+              </div>
+            </div>
+          </td>
+
+          <!-- จำนวนบิล -->
+          <td class="py-3.5 px-4 text-center">
+            <input type="number" min="0" value="${row.bills}"
+              oninput="updateRow(${index}, 'bills', this.value)"
+              class="font-num w-20 sm:w-24 text-center font-bold text-emerald-700 bg-emerald-50/60 hover:bg-emerald-50 focus:bg-white border border-emerald-200/60 focus:border-emerald-500 rounded-xl px-2 py-2 outline-none transition">
+          </td>
+
+          <!-- ยอดเงิน -->
+          <td class="py-3.5 px-6 text-right">
+            <input type="number" min="0" value="${row.amount}"
+              oninput="updateRow(${index}, 'amount', this.value)"
+              class="font-num w-32 sm:w-44 text-right font-bold text-slate-800 bg-slate-100/70 hover:bg-slate-100 focus:bg-white border border-slate-200/70 focus:border-indigo-500 rounded-xl px-3.5 py-2 outline-none transition">
+          </td>
+
+          <!-- ปุ่มลบ -->
+          <td class="py-3.5 px-3 text-center action-col">
+            <button onclick="deleteRow(${index})" title="ลบรายชื่อนี้"
+              class="w-8 h-8 rounded-xl text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition flex items-center justify-center mx-auto cursor-pointer">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      calculateTotals();
+    }
+
+    function updateRow(index, field, value) {
+      if (field === 'name') {
+        appState.rows[index].name = value;
+        saveState();
+        renderTable();
+        return;
+      } else if (field === 'bills') {
+        appState.rows[index].bills = parseInt(value) || 0;
+      } else if (field === 'amount') {
+        appState.rows[index].amount = parseFloat(value) || 0;
+      }
+      saveState();
+      calculateTotals();
+      updateProgressBars();
+    }
+
+    // อัปเดตแถบ % และมงกุฎแบบเรียลไทม์โดยไม่เสีย Focus ช่องพิมพ์
+    function updateProgressBars() {
+      const totalAmount = appState.rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+      const tbody = document.getElementById('sales-table-body');
+      const trs = tbody.querySelectorAll('tr');
+      appState.rows.forEach((row, idx) => {
+        if (!trs[idx]) return;
+        const percent = totalAmount > 0 ? ((Number(row.amount) / totalAmount) * 100).toFixed(1) : 0;
+        const bar = trs[idx].querySelector('.bg-indigo-500');
+        const label = trs[idx].querySelector('.text-\\[11px\\]');
+        if (bar) bar.style.width = `${percent}%`;
+        if (label) label.innerText = `${percent}%`;
+      });
+    }
+
+    function calculateTotals() {
+      const totalBills = appState.rows.reduce((sum, r) => sum + (Number(r.bills) || 0), 0);
+      const totalAmount = appState.rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+
+      document.getElementById('top-total-bills').innerText = formatNumber(totalBills);
+      document.getElementById('top-total-amount').innerText = formatNumber(totalAmount);
+
+      document.getElementById('footer-total-bills').innerText = formatNumber(totalBills);
+      document.getElementById('footer-total-amount').innerText = formatNumber(totalAmount);
+      document.getElementById('sale-count-badge').innerText = `ทีมขายทั้งหมด ${appState.rows.length} ท่าน`;
+    }
+
+    function addRow() {
+      appState.rows.push({
+        id: Date.now(),
+        name: 'Sale ใหม่',
+        bills: 0,
+        amount: 0
+      });
+      saveState();
+      renderTable();
+    }
+
+    function deleteRow(index) {
+      const targetName = appState.rows[index].name || 'รายการนี้';
+      if (confirm(`ต้องการลบ "${targetName}" ออกจากตารางใช่หรือไม่?`)) {
+        appState.rows.splice(index, 1);
+        saveState();
+        renderTable();
+      }
+    }
+
+    function clearNumbers() {
+      if (confirm('ต้องการรีเซ็ตจำนวนบิลและยอดเงินของทุกคนเป็น 0 ใช่หรือไม่?')) {
+        appState.rows.forEach(r => {
+          r.bills = 0;
+          r.amount = 0;
+        });
+        saveState();
+        renderTable();
+      }
+    }
+
+    function resetData() {
+      if (confirm('ต้องการคืนค่าข้อมูลกลับเป็นตัวอย่างตั้งต้นใช่หรือไม่?')) {
+        appState = JSON.parse(JSON.stringify(defaultData));
+        saveState();
+        renderTable();
+      }
+    }
+
+    function downloadAsImage() {
+      const captureArea = document.getElementById('report-capture-area');
+      const actionCols = document.querySelectorAll('.action-col');
+      
+      // ซ่อนคอลัมน์ปุ่มลบชั่วคราวขณะสร้างรูป
+      actionCols.forEach(el => el.style.display = 'none');
+
+      html2canvas(captureArea, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true
+      }).then(canvas => {
+        actionCols.forEach(el => el.style.display = '');
+        const link = document.createElement('a');
+        const dateStr = document.getElementById('report-date').value.replace(/\//g, '-');
+        link.download = `สรุปงานส่งตรง_${dateStr}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    renderTable();
+  </script>
+</body>
+</html>
